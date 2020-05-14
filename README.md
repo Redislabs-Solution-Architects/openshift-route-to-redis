@@ -1,37 +1,42 @@
 # How to expose a Redis Enterprise database for use outside of Openshift K8s
 
-Create SSL enabled Redis Enterprise DB: We are going to use One-Way SSL and the self-signed cert from the default Redis Enterprise installation for this example. Please follow [One-Way SSL](https://redislabs.atlassian.net/wiki/spaces/SA/pages/658080277/TLS+SSL+on+Redis+Enterprise?atlOrigin=eyJpIjoiYTJkY2IxYTU1ZjdlNDE0Yzg0YzVhNjZiNThhYTA0MWEiLCJwIjoiYyJ9) **Server Configuration** and **Server Cert** to pass the cert and/or keystore to the clients below.
+We are going to use One-Way SSL and the self-signed cert from the default Redis Enterprise installation for this example. 
+<!--
+Please follow [One-Way SSL](https://redislabs.atlassian.net/wiki/spaces/SA/pages/658080277/TLS+SSL+on+Redis+Enterprise?atlOrigin=eyJpIjoiYTJkY2IxYTU1ZjdlNDE0Yzg0YzVhNjZiNThhYTA0MWEiLCJwIjoiYyJ9) **Server Configuration** and **Server Cert** to pass the cert and/or keystore to the clients below.
+-->
     
 
-You should have a proxy cert (`proxy_cert.pem` from one of the redis-enterprise pod or from the REST API) and a java keystore ready for the clients to work
+You should have a proxy cert (`proxy_cert.pem` from one of the redis-enterprise pod or from the REST API) and a java keystore ready for the clients to work. 
 
 
-Create an Openshift TLS Route: Follow the steps to create a [route](https://docs.openshift.com/container-platform/3.11/architecture/networking/routes.html#secured-routes) on a database service for external access using [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) enabled clients. SNI enabled clients include:
-* Python
-* Node.js
-* Java
+Create an Openshift TLS Route: Follow the steps to create a [route](https://docs.openshift.com/container-platform/3.11/architecture/networking/routes.html#secured-routes) on a database service for external access using [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) enabled clients. 
     
 1. Locate the Redis DB service you want to expose.
+   
 *note:* There are two services per DB. One is the headless service `<db_name>-headless` and the other is `<db_name>`. Please chose the services `<db_name>` to be exposed. 
+
 ![](images/redis_db_service.png "Redis DB Service")
 
-1.  Choose Defaults
+2.  Choose Defaults names.
     
 
 ![](images/create_route.png "Create Route")
 
-2\. Check the secure route and TLS Termination should be on passthrough
+3. Check the secure route and TLS Termination should be on passthrough.
 
 ![](images/create-route-settings.png "Route Settings")
 
-3\. Copy the Route’s Hostname
+4. Copy the Route’s Hostname.
 
 ![](images/route-created.png "Route Created")
 
-*   Build and connect using SNI enabled clients: We will be using the Route’s Hostname and port 443 (OS uses HAProxy for the route and it always connects on port 443 for HTTPS by default) to connect to Redis Enterprise database(s) from outside with [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) enabled clients like Java and Python
+
+## Code examples for testing
+
+Build and connect using SNI enabled clients: We will be using the Route’s Hostname and port 443 (OS uses HAProxy for the route and it always connects on port 443 for HTTPS by default) to connect to Redis Enterprise database(s) from outside with [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) enabled clients like Java and Python.
     
 
-## Jedis Example #1
+### Jedis Example #1
 
 Maven Dependency
 ```
@@ -44,13 +49,13 @@ Maven Dependency
 
 ***JVM Arguments:***
 
-To enable SSL debugging, add **\-Djavax.net.debug=ssl** to the VM Args
+To enable SSL debugging, add `-Djavax.net.debug=ssl` to the VM Args
 
-\-Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=/Users/viragtripathi/redis\_ssl/okd/client-truststore.jks -Djavax.net.ssl.trustStorePassword=znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz
+`-Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=/Users/viragtripathi/redis_ssl/okd/client-truststore.jks -Djavax.net.ssl.trustStorePassword=znxCsEKpHHwgexxvDDK6g8nWIiINg_3NPxNEwv8WoNu8Eaaz`
 
-\[I have used the same password for DB and trust store but they can be different. Please update the trust store location and password according to your setup.\]
+You can use the same password for DB and trust store or they can be different. Please update the trust store location and password according to your setup.
 
-Please update the Hostname and Password according to your setup
+Please update the Hostname and Password according to your database:
 
 ```
 package com.redislabs.os.client;
@@ -63,7 +68,7 @@ import redis.clients.jedis.JedisShardInfo;
 
 public class JedisSSLTest
 {
-  public static void main( String\[\] args )
+  public static void main( String[] args )
   {
 	  
 	  final URI uri = URI.create("rediss://redis-4dcfa6fa-f1eb-11e9-9464-0a580a800096-bjb-east1.apps.okde2.demo-rlec.redislabs.com:443");
@@ -72,7 +77,7 @@ public class JedisSSLTest
 
       JedisShardInfo shardInfo = new JedisShardInfo(uri, sslSocketFactory, sslParameters, null);
 
-      shardInfo.setPassword("znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz"); 
+      shardInfo.setPassword("znxCsEKpHHwgexxvDDK6g8nWIiINg_3NPxNEwv8WoNu8Eaaz"); 
       Jedis jedis = new Jedis(shardInfo);
       jedis.set("hello", "Hello from jedis client running outside OpenShift");
       String value = jedis.get("hello").toString();
@@ -95,13 +100,13 @@ Maven Dependency
 ```
 ***JVM Arguments:***
 
-To enable SSL debugging, add **\-Djavax.net.debug=ssl** to the VM Args
+To enable SSL debugging, add `-Djavax.net.debug=ssl` to the VM Args
 
-\-Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=/Users/viragtripathi/redis\_ssl/okd/client-truststore.jks -Djavax.net.ssl.trustStorePassword=znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz
+`-Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=/Users/viragtripathi/redis_ssl/okd/client-truststore.jks -Djavax.net.ssl.trustStorePassword=znxCsEKpHHwgexxvDDK6g8nWIiINg_3NPxNEwv8WoNu8Eaaz`
 
-\[I have used the same password for DB and trust store but they can be different. Please update the trust store location and password according to your setup.\]
+You can use the same password for DB and trust store or they can be different. Please update the trust store location and password according to your setup.
 
-Please update the Hostname and Password according to your setup
+Please update the Hostname and Password according to your database:
 
 ```
 package com.redislabs.os.client;
@@ -114,10 +119,10 @@ import redis.clients.jedis.JedisShardInfo;
 
 public class JedisSSLTest
 {
-  public static void main( String\[\] args )
+  public static void main( String[] args )
   {
 	    Jedis jedis = new Jedis("rediss://redis-4dcfa6fa-f1eb-11e9-9464-0a580a800096-bjb-east1.apps.okde2.demo-rlec.redislabs.com:443");
-	    jedis.auth("znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz");
+	    jedis.auth("znxCsEKpHHwgexxvDDK6g8nWIiINg_3NPxNEwv8WoNu8Eaaz");
 	    jedis.set("hello", "Hello from jedis client running outside OpenShift");
 	    String value = jedis.get("hello").toString();
 	    System.out.println("Value:" + value);
@@ -127,9 +132,9 @@ public class JedisSSLTest
 }
 ```
 
-## Lettuce Exampl
+## Lettuce Example
 
-Maven Dependency
+Maven Dependency:
 ```
 	<dependency>
 	  <groupId>io.lettuce</groupId>
@@ -138,15 +143,15 @@ Maven Dependency
 	</dependency>
 ```
 
-**VM Arguments:**
+**JVM Arguments:**
 
-To enable SSL debugging, add **\-Djavax.net.debug=ssl** to the VM Args
+To enable SSL debugging, add `-Djavax.net.debug=ssl` to the VM Args
 
-\-Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=/Users/viragtripathi/redis\_ssl/okd/client-truststore.jks -Djavax.net.ssl.trustStorePassword=znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz
+`-Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=/Users/viragtripathi/redis_ssl/okd/client-truststore.jks -Djavax.net.ssl.trustStorePassword=znxCsEKpHHwgexxvDDK6g8nWIiINg_3NPxNEwv8WoNu8Eaaz`
 
-\[I have used the same password for DB and trust store but they can be different. Please update the trust store location and password according to your setup\]
+You can use the same password for DB and trust store or they can be different. Please update the trust store location and password according to your setup.
 
-Please update the Hostname and Password according to your setup
+Please update the Hostname and Password according to your database:
 
 ```
 package com.redislabs.os.client;
@@ -158,14 +163,14 @@ import io.lettuce.core.api.sync.RedisCommands;
 
 public class LettuceSSLTest {
 
-	public static void main(String\[\] args) {
+	public static void main(String[] args) {
 
 		RedisURI redisUri = RedisURI.Builder
 				.redis("redis-4dcfa6fa-f1eb-11e9-9464-0a580a800096-bjb-east1.apps.okde2.demo-rlec.redislabs.com")
 				.withPort(443)
 				.withSsl(true)
 				.withVerifyPeer(false)
-				.withPassword("znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz")
+				.withPassword("znxCsEKpHHwgexxvDDK6g8nWIiINg3NPxNEwv8WoNu8Eaaz")
 				.build();
 
 		RedisClient client = RedisClient.create(redisUri);
@@ -187,7 +192,7 @@ public class LettuceSSLTest {
 
 Version used: Python 3.7.3
 
-Please update the Hostname, Password and cert location according to your setup
+Please update the Hostname, Password and cert location according to your setup:
 
 ```
 import redis
@@ -195,10 +200,10 @@ try:
     r = redis.StrictRedis(    
     host='redis-4dcfa6fa-f1eb-11e9-9464-0a580a800096-bjb-east1.apps.okde2.demo-rlec.redislabs.com',
     port=443,
-    password='znxCsEKpHHwgexxvDDK6g8nWIiINg\_3NPxNEwv8WoNu8Eaaz',
+    password='znxCsEKpHHwgexxvDDK6g8nWIiINg3NPxNEwv8WoNu8Eaaz',
     ssl=True,
-    ssl\_cert\_reqs='required',
-    ssl\_ca\_certs='/Users/viragtripathi/redis\_ssl/okd/proxy\_cert.pem')
+    ssl_cert_reqs='required',
+    ssl_ca_certs='/Users/viragtripathi/redis_ssl/okd/proxy_cert.pem')
     print (r.info())
 #test the connection
     print('Testing redis by setting a key and value..')
@@ -210,4 +215,4 @@ except Exception as e:
 ```
 
 ## Acknowledgements
-Thanks Virag!
+Thanks virag@redislabs.com !
