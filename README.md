@@ -1,5 +1,7 @@
 # How to expose a Redis Enterprise database for use outside of Openshift K8s
 
+Thanks to Virag for documenting this.
+
 We are going to use One-Way SSL and the self-signed cert from the default Redis Enterprise installation for this example. 
 <!--
 Please follow [One-Way SSL](https://redislabs.atlassian.net/wiki/spaces/SA/pages/658080277/TLS+SSL+on+Redis+Enterprise?atlOrigin=eyJpIjoiYTJkY2IxYTU1ZjdlNDE0Yzg0YzVhNjZiNThhYTA0MWEiLCJwIjoiYyJ9) **Server Configuration** and **Server Cert** to pass the cert and/or keystore to the clients below.
@@ -213,6 +215,3 @@ try:
 except Exception as e:
     print (e)
 ```
-
-## Acknowledgements
-Thanks virag@redislabs.com !
