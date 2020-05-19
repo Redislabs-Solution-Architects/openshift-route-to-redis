@@ -3,12 +3,29 @@
 Thanks to Virag for documenting this.
 
 We are going to use One-Way SSL and the self-signed cert from the default Redis Enterprise installation for this example. 
+
+## Prerequisites
+
+The following are needed:
+  * A Redis Enterprise database with one-way SSL configured. 
+  * Proxy certificate from the deployed Redis Enteprise Cluster
+
+To configure a redis DB with One-way SSL, configure your redis DB using the web UI with the following TLS settings:
+![](images/redis-nmtls-db.png)
+
 <!--
 Please follow [One-Way SSL](https://redislabs.atlassian.net/wiki/spaces/SA/pages/658080277/TLS+SSL+on+Redis+Enterprise?atlOrigin=eyJpIjoiYTJkY2IxYTU1ZjdlNDE0Yzg0YzVhNjZiNThhYTA0MWEiLCJwIjoiYyJ9) **Server Configuration** and **Server Cert** to pass the cert and/or keystore to the clients below.
 -->
-    
 
-You should have a proxy cert (`proxy_cert.pem` from one of the redis-enterprise pod or from the REST API) and a java keystore ready for the clients to work. 
+
+You should have a proxy cert (`proxy_cert.pem` from one of the redis-enterprise pod or from the REST API) and a java keystore ready for the clients to work. Obtain the `proxy_cert.pem` from Redis Enterprise from via REST API as follows:
+```
+$ curl -u <usename>:<password> https://<cluster_address>:9443/v1/cluster/certificates | jq '.proxy_cert'
+"-----BEGIN CERTIFICATE-----\n
+...
+-----END CERTIFICATE-----\n"
+$
+```
 
 
 Create an Openshift TLS Route: Follow the steps to create a [route](https://docs.openshift.com/container-platform/3.11/architecture/networking/routes.html#secured-routes) on a database service for external access using [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) enabled clients. 
